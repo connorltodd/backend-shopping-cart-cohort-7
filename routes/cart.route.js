@@ -12,7 +12,19 @@ router.post('/:cart_id/products', (request, response) => {
         if(error) {
             response.status(500).json(error);
         } else {
-            response.json({ message: 'cart product was successfully created'})
+            const newCartProductId = results.insertId;
+            connection.query(`
+            SELECT  Product.id as product_id, Product.*, Cart_Product.id as cart_product_id, Cart_Product.quantity, Cart.id as cart_id FROM Cart
+            JOIN Cart_Product ON Cart.id = Cart_Product.cart_id 
+            JOIN Product ON Product.id = Cart_Product.product_id WHERE Cart.id = ? AND Cart_Product.id = ?
+        `, [cart_id, newCartProductId], (error, results) => {
+            if(error) {
+                response.status(500).json(error);
+            } else {
+                response.json(results)
+            }
+        })
+            
         }
     })
 });
@@ -23,7 +35,7 @@ router.get('/:cart_id/products', (request, response) => {
     const { cart_id } = request.params;
 
     connection.query(`
-        SELECT Product.*, Cart_Product.id as cart_product_id, Cart_Product.quantity, Cart.id as cart_id FROM Cart
+        SELECT Product.id as product_id, Product.*, Cart_Product.id as cart_product_id, Cart_Product.quantity, Cart.id as cart_id FROM Cart
         JOIN Cart_Product ON Cart.id = Cart_Product.cart_id 
         JOIN Product ON Product.id = Cart_Product.product_id WHERE Cart.id = ?
     `, [cart_id], (error, results) => {
